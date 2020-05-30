@@ -2,7 +2,7 @@ import java.io.*;
 
 public class Client {
     private final int contacts = 150;
-    private String username = "User";
+    private String username = "user";
 
 
     public Client() {

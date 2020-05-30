@@ -4,18 +4,20 @@ import java.io.*;
 import java.net.Socket;
 
 public class ClientHandlerThread implements Runnable{
+    private final String dataFilename;
     private final Client client;
     private final Socket socket;
     private final BufferedReader reader;
     private final BufferedWriter writer;
-    private final DatabaseBuddy database;
+    private final Data data;
 
-    public ClientHandlerThread(Socket socket) throws IOException {
+    public ClientHandlerThread(Socket socket, Data data, String filename) throws IOException {
+        this.dataFilename = filename;
         this.client = new Client();
         this.socket = socket;
         this.reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
         this.writer = new BufferedWriter(new OutputStreamWriter(this.socket.getOutputStream()));
-        this.database = new DatabaseBuddy();
+        this.data = data;
     }
 
 
@@ -55,6 +57,19 @@ public class ClientHandlerThread implements Runnable{
     }
 
 
+    public void saveData(String filename) throws IOException {
+        FileOutputStream file = new FileOutputStream(this.dataFilename);
+        ObjectOutputStream out = new ObjectOutputStream(file);
+
+        synchronized (this.data) {
+            out.writeObject(this.data);
+        }
+
+        out.close();
+        file.close();
+    }
+
+
     public void verifyPasswords(String username) throws IOException {
         final String password1, password2;
 
@@ -70,8 +85,9 @@ public class ClientHandlerThread implements Runnable{
             this.writer.write("\u001B[32mYou are now registered and logged in!\u001B[0m\n");
             this.writer.flush();
             this.client.setUsername(username);
-            database.insertUser(username, password1);
+            data.putUser(username, password1);
             this.displayUserInLine();
+            this.saveData("filename");
         }
         else {
             this.writer.write("\u001B[31mThe passwords don't match! Please try again.\u001B[0m\n");
@@ -87,7 +103,7 @@ public class ClientHandlerThread implements Runnable{
         this.writer.flush();
         username = this.reader.readLine();
 
-        if (database.existsUser(username)) {
+        if (this.data.containsUser(username)) {
             register(false);
         }
         else {
@@ -103,7 +119,7 @@ public class ClientHandlerThread implements Runnable{
 
         username = this.reader.readLine();
 
-        if (!this.database.existsUser(username)) {
+        if (!this.data.containsUser(username)) {
             this.authenticateUsername(false);
         }
 
@@ -111,14 +127,14 @@ public class ClientHandlerThread implements Runnable{
     }
 
     public void authenticatePassword(String username, boolean firstTry) throws IOException {
-        Document userInfo = this.database.getUser(username);
-        final String password;
+        final String password = this.data.getPassword(username);
+        final String inputPassword;
 
         this.writer.write(firstTry ? "Please enter your password: " : "\u001B[31mYour password is incorrect. Please try again: \u001B[0m");
         this.writer.flush();
-        password = this.reader.readLine();
+        inputPassword = this.reader.readLine();
 
-        if (userInfo.get("password").equals(password)) {
+        if (password.equals(inputPassword)) {
             this.writer.write("\u001B[32mYou are now logged in!\u001B[30m\n");
             this.writer.flush();
             this.client.setUsername(username);
@@ -129,15 +145,11 @@ public class ClientHandlerThread implements Runnable{
 
     @Override
     public void run() {
-        while (!this.socket.isClosed()) {
-            try {
-                this.loginMessage();
-                this.readLoginOption();
-
-                return;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            this.loginMessage();
+            this.readLoginOption();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
