@@ -1,5 +1,3 @@
-import org.bson.Document;
-
 import java.io.*;
 import java.net.Socket;
 
