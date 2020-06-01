@@ -1,3 +1,5 @@
 .idea
 .gradle
 main/java/*.class
+build
+data.obj
