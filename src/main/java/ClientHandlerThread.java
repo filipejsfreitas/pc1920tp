@@ -55,7 +55,7 @@ public class ClientHandlerThread implements Runnable{
     }
 
 
-    public void saveData(String filename) throws IOException {
+    public void saveData() throws IOException {
         FileOutputStream file = new FileOutputStream(this.dataFilename);
         ObjectOutputStream out = new ObjectOutputStream(file);
 
@@ -85,7 +85,7 @@ public class ClientHandlerThread implements Runnable{
             this.client.setUsername(username);
             data.putUser(username, password1);
             this.displayUserInLine();
-            this.saveData("filename");
+            this.saveData();
         }
         else {
             this.writer.write("\u001B[31mThe passwords don't match! Please try again.\u001B[0m\n");
