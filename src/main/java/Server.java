@@ -4,12 +4,15 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Server {
     private final String dataFilename = "data.obj";
     private final ServerSocket serverSocket;
     private final Data data;
     private final List<ClientThread> clients;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock(true);
 
     public Server() throws IOException, ClassNotFoundException {
         this.serverSocket = new ServerSocket(1234);
@@ -24,15 +27,15 @@ public class Server {
     }
 
     public void addClientThread(ClientThread client) {
-        synchronized(clients) {
-            this.clients.add(client);
-        }
+        lock.writeLock().lock();
+        this.clients.add(client);
+        lock.writeLock().unlock();
     }
 
     public void removeClientThread(ClientThread client) {
-        synchronized(clients) {
-            this.clients.remove(client);
-        }
+        lock.writeLock().lock();
+        this.clients.remove(client);
+        lock.writeLock().unlock();
     }
 
     public String getDataFilename() {
@@ -81,15 +84,15 @@ public class Server {
                 .average()
                 .orElse(0.0);
 
-        synchronized(this.clients) {
-            this.clients.forEach(c -> {
-                try {
-                    c.sendMessages("", "Updated count: " + average);
-                } catch(IOException e) {
-                    e.printStackTrace();
-                }
-            });
-        }
+        this.lock.readLock().lock();
+        this.clients.forEach(c -> {
+            try {
+                c.sendMessages("", "Updated count: " + average);
+            } catch(IOException e) {
+                e.printStackTrace();
+            }
+        });
+        this.lock.readLock().unlock();
     }
 
     public void run() throws IOException {
@@ -114,17 +117,17 @@ public class Server {
 
             this.serverSocket.close();
 
-            synchronized(this.clients) {
-                for(ClientThread client : this.clients) {
-                    client.close();
-                }
+            this.lock.readLock().lock();
+            for(ClientThread client : this.clients) {
+                client.close();
             }
+            this.lock.readLock().unlock();
 
             while(true) {
-                synchronized(this.clients) {
-                    if(this.clients.isEmpty())
-                        break;
-                }
+                this.lock.readLock().lock();
+                if(this.clients.isEmpty())
+                    break;
+                this.lock.readLock().unlock();
             }
 
             this.saveData();
