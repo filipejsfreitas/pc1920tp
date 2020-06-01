@@ -19,11 +19,17 @@ public class ClientThread implements Runnable {
     }
 
     public void sendMessage(String line) throws IOException {
+        if(!this.socket.isConnected() || this.socket.isOutputShutdown())
+            return;
+
         this.writer.write(line + Color.RESET);
         this.writer.flush();
     }
 
     public void sendMessages(String... lines) throws IOException {
+        if(!this.socket.isConnected() || this.socket.isOutputShutdown())
+            return;
+
         for(String line : lines) {
             this.writer.write(line + Color.RESET + "\n");
         }
@@ -146,6 +152,11 @@ public class ClientThread implements Runnable {
     public void updateInfectedCount() throws NumberFormatException, IOException {
         try {
             String line = this.reader.readLine();
+            if(line == null) {
+                this.close();
+                return;
+            }
+
             int inputInfectedCount = Integer.parseInt(line);
             if(this.client.updateInfectedContacts(inputInfectedCount)) {
                 this.sendMessages("Your infected count has been updated!");
@@ -187,6 +198,9 @@ public class ClientThread implements Runnable {
     }
 
     public void close() throws IOException {
+        this.sendMessages("\n"); // Send empty newline
+        this.socket.shutdownOutput();
+        this.socket.shutdownInput();
         this.socket.close();
     }
 }

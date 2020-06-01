@@ -26,7 +26,7 @@ public class Client implements Serializable {
 
     // Returns true if infected count does not exceed total contacts
     public boolean updateInfectedContacts(int infected) {
-        if(infected > CONTACTS) return false;
+        if(infected > CONTACTS || infected < 0) return false;
         else {
             lock.writeLock().lock();
             this.infectedContacts = infected;
