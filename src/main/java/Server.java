@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 public class Server {
     private final String dataFilename = "data.obj";
-
     private final ServerSocket serverSocket;
     private final Data data;
     private final ArrayList<Thread> clients;
@@ -22,9 +21,13 @@ public class Server {
         this.data = readData(this.dataFilename);
     }
 
-    public void addClient(Thread client) {
+    public void addClientThread(Thread client) {
         this.clients.add(client);
     }
+
+    public String getDataFilename() {return this.dataFilename;}
+
+    public Data getData() {return this.data;}
 
     public Data readData(String filename) throws ClassNotFoundException, IOException {
         try {
@@ -46,18 +49,32 @@ public class Server {
         return new Data();
     }
 
+    public void saveData() throws IOException {
+        FileOutputStream file = new FileOutputStream(this.dataFilename);
+        ObjectOutputStream out = new ObjectOutputStream(file);
+
+        synchronized (this.data) {
+            out.writeObject(this.data);
+        }
+
+        out.close();
+        file.close();
+    }
+
+//    public void propagateNewInfectedRatio() {
+//        int totalInfected = this.data.
+//    }
+
 
     public void start() throws IOException {
         Socket clientSocket;
 
-
         while ((clientSocket = serverSocket.accept()) != null) {
-            ClientHandlerThread client = new ClientHandlerThread(clientSocket, this.data, this.dataFilename);
+            ClientHandlerThread client = new ClientHandlerThread(clientSocket, this);
             Thread t = new Thread(client);
-            this.addClient(t);
+            this.addClientThread(t);
             t.start();
         }
-
 
         this.clients.forEach(t -> {
             try {
