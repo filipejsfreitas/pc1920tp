@@ -103,15 +103,16 @@ public class Server {
 
 
     public void propagateNewInfectedRatio() {
-
         double average = this.calculateInfectedRatio();
 
         this.lock.readLock().lock();
+        String timeInfo = this.getTimeInfo();
+
         this.clients.stream()
                     .filter(ClientThread::isLoggedIn)
                     .forEach(c -> {
                         try {
-                            c.sendMessages(Color.BLUE  +  "\r[" + this.getTimeInfo() + "] " + "Updated infected ratio is " + average);
+                            c.sendMessages(Color.BLUE  +  "\r[" + timeInfo + "] " + "Updated infected ratio is " + average);
                             c.displayUserInLine();
                         } catch(IOException e) {
                             e.printStackTrace();
