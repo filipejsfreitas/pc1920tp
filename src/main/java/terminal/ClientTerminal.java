@@ -4,7 +4,6 @@ import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.stream.Stream;
 
 public class ClientTerminal {
     private static final String SERVER_ADDRESS = "127.0.0.1";

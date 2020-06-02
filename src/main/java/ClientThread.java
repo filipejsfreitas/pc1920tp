@@ -196,7 +196,8 @@ public class ClientThread implements Runnable {
             this.sendLoginMessage();
             this.readLoginOption();
 
-            this.sendMessages( Color.BLUE + "Please feel free to update your number of infected contacts anytime you'd like. Just input the new value, followed by ENTER.");
+            this.sendMessages( Color.BLUE + "Please feel free to update your number of infected contacts anytime you'd like. Just input the new value, followed by ENTER.",
+                    Color.BLUE + "[" + server.getTimeInfo() + "] The current infected ratio is " + this.server.calculateInfectedRatio());
 
             while(!socket.isClosed()) {
                 this.displayUserInLine();
@@ -210,7 +211,7 @@ public class ClientThread implements Runnable {
     }
 
     public void close() throws IOException {
-        this.sendMessages("\n"); // Send empty newline
+        this.sendMessage("\n"); // Send empty newline
         this.socket.shutdownOutput();
         this.socket.shutdownInput();
         this.socket.close();

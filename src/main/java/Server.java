@@ -22,11 +22,13 @@ public class Server {
         this.data = readData(this.dataFilename);
     }
 
+
     public Server(int serverSocketPort) throws IOException, ClassNotFoundException {
         this.serverSocket = new ServerSocket(serverSocketPort);
         this.clients = new ArrayList<>();
         this.data = readData(this.dataFilename);
     }
+
 
     public void addClientThread(ClientThread client) {
         lock.writeLock().lock();
@@ -34,19 +36,23 @@ public class Server {
         lock.writeLock().unlock();
     }
 
+
     public void removeClientThread(ClientThread client) {
         lock.writeLock().lock();
         this.clients.remove(client);
         lock.writeLock().unlock();
     }
 
+
     public String getDataFilename() {
         return this.dataFilename;
     }
 
+
     public Data getData() {
         return this.data;
     }
+
 
     public Data readData(String filename) throws ClassNotFoundException, IOException {
         try {
@@ -67,6 +73,7 @@ public class Server {
         return new Data();
     }
 
+
     public void saveData() throws IOException {
         FileOutputStream file = new FileOutputStream(this.dataFilename);
         ObjectOutputStream out = new ObjectOutputStream(file);
@@ -79,25 +86,32 @@ public class Server {
         file.close();
     }
 
+
     public String getTimeInfo() {
         LocalDateTime date = LocalDateTime.now();
         return date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss SSS"));
     }
 
-    public void propagateNewInfectedRatio() {
 
-        double average = this.data.getClients()
+    public double calculateInfectedRatio() {
+        return this.data.getClients()
                 .stream()
                 .mapToDouble(Client::getInfectedRatio)
                 .average()
                 .orElse(0.0);
+    }
+
+
+    public void propagateNewInfectedRatio() {
+
+        double average = this.calculateInfectedRatio();
 
         this.lock.readLock().lock();
         this.clients.stream()
                     .filter(ClientThread::isLoggedIn)
                     .forEach(c -> {
                         try {
-                            c.sendMessages(Color.BLUE  +  "\r[" + this.getTimeInfo() + "] " + "Updated count: " + average);
+                            c.sendMessages(Color.BLUE  +  "\r[" + this.getTimeInfo() + "] " + "Updated infected ratio is " + average);
                             c.displayUserInLine();
                         } catch(IOException e) {
                             e.printStackTrace();
@@ -105,6 +119,7 @@ public class Server {
         });
         this.lock.readLock().unlock();
     }
+
 
     public void run() throws IOException {
         System.out.println("Server is now running!");
@@ -121,6 +136,7 @@ public class Server {
                 throw e;
         }
     }
+
 
     public void close() {
         try {
