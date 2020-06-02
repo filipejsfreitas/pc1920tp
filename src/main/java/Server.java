@@ -85,12 +85,15 @@ public class Server {
                 .orElse(0.0);
 
         this.lock.readLock().lock();
-        this.clients.forEach(c -> {
-            try {
-                c.sendMessages("", "Updated count: " + average);
-            } catch(IOException e) {
-                e.printStackTrace();
-            }
+        this.clients.stream()
+                    .filter(ClientThread::isLoggedIn)
+                    .forEach(c -> {
+                        try {
+                            c.sendMessages(Color.BLUE + "\rUpdated count: " + average);
+                            c.displayUserInLine();
+                        } catch(IOException e) {
+                            e.printStackTrace();
+                        }
         });
         this.lock.readLock().unlock();
     }

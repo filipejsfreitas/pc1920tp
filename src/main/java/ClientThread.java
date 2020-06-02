@@ -19,31 +19,44 @@ public class ClientThread implements Runnable {
     }
 
     public void sendMessage(String line) throws IOException {
-        if(!this.socket.isConnected() || this.socket.isOutputShutdown())
-            return;
+        try {
+            this.writer.write(line + Color.RESET + "\0");
+            this.writer.flush();
 
-        this.writer.write(line + Color.RESET);
-        this.writer.flush();
+        }
+        catch (SocketException s) {
+            if (!this.socket.isClosed() || this.socket.isConnected()) {
+                throw s;
+            }
+        }
+    }
+
+    public boolean isLoggedIn() {
+        return this.client != null;
     }
 
     public void sendMessages(String... lines) throws IOException {
-        if(!this.socket.isConnected() || this.socket.isOutputShutdown())
-            return;
+        try {
+            for(String line : lines) {
+                this.writer.write(line + Color.RESET + "\n\0");
+            }
 
-        for(String line : lines) {
-            this.writer.write(line + Color.RESET + "\n");
+            this.writer.flush();
         }
-
-        this.writer.flush();
+        catch (SocketException s) {
+            if (!this.socket.isClosed() || this.socket.isConnected()) {
+                throw s;
+            }
+        }
     }
 
-    private void displayUserInLine() throws IOException {
-        this.sendMessage(Color.PURPLE + this.client.getUsername() + ": ");
+    public void displayUserInLine() throws IOException {
+        this.sendMessage("\r" + Color.PURPLE + this.client.getUsername() + ": ");
     }
 
     private void sendLoginMessage() throws IOException {
         this.sendMessages(
-                "Welcome to the 'Infected-Counter-0-Matic! Do you wish to:",
+                Color.YELLOW + "Welcome to the 'Infected-Counter-0-Matic! Do you wish to:",
                 Color.YELLOW + "1 - Register",
                 Color.YELLOW + "2 - Authenticate"
         );
@@ -75,10 +88,10 @@ public class ClientThread implements Runnable {
         while(true) {
             final String password1, password2;
 
-            this.sendMessage("Please enter your password: ");
+            this.sendMessage(Color.YELLOW + "Please enter your password: ");
             password1 = this.reader.readLine();
 
-            this.sendMessage("Please confirm your password: ");
+            this.sendMessage(Color.YELLOW + "Please confirm your password: ");
             password2 = this.reader.readLine();
 
             if(password1.equals(password2)) {
@@ -86,7 +99,6 @@ public class ClientThread implements Runnable {
 
                 this.client = new Client(username, password1);
                 this.server.getData().putClient(username, this.client);
-                this.server.saveData();
                 break;
             } else {
                 this.sendMessages(Color.RED + "The passwords don't match! Please try again.");
@@ -100,7 +112,7 @@ public class ClientThread implements Runnable {
         while(true) {
             final String username;
 
-            this.sendMessage(firstTry ? "Please enter your desired username: " : Color.RED + "That username is already taken! Please try another one: ");
+            this.sendMessage(firstTry ? Color.YELLOW + "Please enter your desired username: " : Color.RED + "That username is already taken! Please try another one: ");
             username = this.reader.readLine();
 
             if(this.server.getData().containsClient(username)) {
@@ -117,7 +129,7 @@ public class ClientThread implements Runnable {
         String username;
 
         while(true) {
-            this.sendMessage(firstTry ? "Please enter your username: " : Color.RED + "That username is not registered! Try again: ");
+            this.sendMessage(firstTry ? Color.YELLOW + "Please enter your username: " : Color.RED + "That username is not registered! Try again: ");
 
             username = this.reader.readLine();
 
@@ -135,7 +147,7 @@ public class ClientThread implements Runnable {
         while(true) {
             String userPassword = this.server.getData().getClient(username).getPassword();
 
-            this.sendMessage(firstTry ? "Please enter your password: " : Color.RED + "Your password is incorrect. Please try again: ");
+            this.sendMessage(firstTry ? Color.YELLOW + "Please enter your password: " : Color.RED + "Your password is incorrect. Please try again: ");
             String inputPassword = this.reader.readLine();
 
             if(userPassword.equals(inputPassword)) {
@@ -159,10 +171,10 @@ public class ClientThread implements Runnable {
 
             int inputInfectedCount = Integer.parseInt(line);
             if(this.client.updateInfectedContacts(inputInfectedCount)) {
-                this.sendMessages("Your infected count has been updated!");
+                this.sendMessages(Color.GREEN + "Your infected count has been updated!");
                 this.server.propagateNewInfectedRatio();
             } else {
-                this.sendMessages("You cannot specify a number of infected contacts greater than the number of contacts themselves!");
+                this.sendMessages(Color.RED + "You must enter a number between 0 and 150!");
             }
         } catch(SocketException e) {
             if(!this.socket.isClosed()) {
@@ -171,7 +183,7 @@ public class ClientThread implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         } catch(NumberFormatException n) {
-            this.sendMessages("Please enter a valid integer.");
+            this.sendMessages(Color.RED + "Please enter a valid integer.");
         }
     }
 
@@ -184,7 +196,7 @@ public class ClientThread implements Runnable {
             this.sendLoginMessage();
             this.readLoginOption();
 
-            this.sendMessages("Please feel free to update your number of infected contacts anytime you'd like. Just input the new value, followed by ENTER.");
+            this.sendMessages( Color.BLUE + "Please feel free to update your number of infected contacts anytime you'd like. Just input the new value, followed by ENTER.");
 
             while(!socket.isClosed()) {
                 this.displayUserInLine();
