@@ -2,6 +2,8 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -77,7 +79,13 @@ public class Server {
         file.close();
     }
 
+    public String getTimeInfo() {
+        LocalDateTime date = LocalDateTime.now();
+        return date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss SSS"));
+    }
+
     public void propagateNewInfectedRatio() {
+
         double average = this.data.getClients()
                 .stream()
                 .mapToDouble(Client::getInfectedRatio)
@@ -89,7 +97,7 @@ public class Server {
                     .filter(ClientThread::isLoggedIn)
                     .forEach(c -> {
                         try {
-                            c.sendMessages(Color.BLUE + "\rUpdated count: " + average);
+                            c.sendMessages(Color.BLUE  +  "\r[" + this.getTimeInfo() + "] " + "Updated count: " + average);
                             c.displayUserInLine();
                         } catch(IOException e) {
                             e.printStackTrace();
