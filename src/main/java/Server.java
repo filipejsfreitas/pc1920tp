@@ -44,11 +44,6 @@ public class Server {
     }
 
 
-    public String getDataFilename() {
-        return this.dataFilename;
-    }
-
-
     public Data getData() {
         return this.data;
     }
