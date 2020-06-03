@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     for i in range(MIN, NUM_CLIENTS):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(("192.168.1.70", 1234))
+        sock.connect(("127.0.0.1", 1234))
 
         socks.append(sock)
 
